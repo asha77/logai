@@ -49,3 +49,4 @@ tests/mock_mcp_server.sh
 # Documentation build
 /book/
 reports
+sample_logs

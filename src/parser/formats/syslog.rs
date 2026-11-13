@@ -22,12 +22,14 @@ impl SyslogParser {
     pub fn new() -> Self {
         // RFC 3164 (BSD Syslog): <priority>timestamp hostname tag: message
         let rfc3164_pattern =
-            Regex::new(r"^<(\d+)>(\w{3}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\s+(\S+)\s+([^:]+):\s*(.+)")
-                .unwrap();
+        //    Regex::new(r"^<(\d+)>(\w{3}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\s+(\S+)\s+([^:]+):\s*(.+)")
+            Regex::new(r"^(?<timestamp>[A-Z][a-z]{2}\s+\d+\s+\d{2}:\d{2}:\d{2}\.\d{6})\s+(?<hostname>[^\s]+)\s+(?<level>[A-Z]+)\s+(?<process>[^:\[]+)(?:\[(?<pid>\d+)\])?:\s+(?<message>.*)$")
+            .unwrap();
 
         // RFC 5424: <priority>version timestamp hostname app-name procid msgid [structured-data] message
         let rfc5424_pattern = Regex::new(
-            r"^<(\d+)>(\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(?:\[([^\]]+)\]\s+)?(.*)$",
+            // r"^<(\d+)>(\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(?:\[([^\]]+)\]\s+)?(.*)$",
+            r"^(\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(?:\[([^\]]+)\]\s+)?(.*)$",
         )
         .unwrap();
 

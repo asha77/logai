@@ -31,7 +31,18 @@ impl ErrorGrouper {
                 |\bWorker\d+\b                                                     # Worker IDs
                 # Network
                 |https?://[^\s]+                                                   # URLs
-                |\b\d+\.\d+\.\d+\.\d+\b                                           # IP addresses
+                |\b\d+\.\d+\.\d+\.\d+\b                                             # IP addresses
+                |\bEthernet\d+\b                                                    # Ethernet interfaces
+                |\bVrf-\S+\b                                                        # VRF name
+                |\bVRF\s\d+\b                                                       # VRF NUM
+                |\bVlan\d+\b                                                        # Vlan ID
+                |\bSag\d+\b                                                         # SAG num
+                |\b([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}\b                             # MAC Address
+                |\bLoopback\d+\b                                                    # Loopback num
+                |\bpimreg\d+\b                                                      # PIM reg ID
+                |\bifindex=\d+\b                                                    # ifindex=id
+                |\bid=[0-9a-f]+.\b                                                  # id=100000000000e.
+                |\b[0-9a-fA-F]{14}\b                                                # 100000000002c2
                 # Paths and threads
                 |/[\w/.-]+:\d+                                                     # File paths with line numbers
                 |\[[\w-]+-\d+\]                                                    # Thread names
