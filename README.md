@@ -10,6 +10,13 @@
 [![Rust Version](https://img.shields.io/badge/rust-1.70%2B-blue.svg)](https://www.rust-lang.org)
 [![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg)](https://github.com/ranjan-mohanty/logai/releases/latest)
 
+**What's changed in this REPO:**
+- slightly changed syslog detection regexp - to support edgecore syslog forman
+- added normalyser regexp - to detect network-specific dynamic values 
+- added tools to work with edgecore data:
+  - /edgecore_tools/log_unpack.sh - Shell scropt to extract all syslog from edgecore techdump archive
+  - /edgecore_tools/flatten_logs.py - Python script to filter, clear and simplify edgecore logs - for better classification
+
 **AI-powered log analysis** - Parse, group, and understand your logs with AI.
 
 LogAI analyzes your application logs, groups similar errors, and uses AI to
