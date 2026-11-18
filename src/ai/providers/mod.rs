@@ -12,9 +12,11 @@ mod claude;
 mod gemini;
 mod ollama;
 mod openai;
+mod jetgpt;
 
 pub use bedrock::BedrockProvider;
 pub use claude::ClaudeProvider;
 pub use gemini::GeminiProvider;
 pub use ollama::OllamaProvider;
 pub use openai::OpenAIProvider;
+pub use jetgpt::JetGPTProvider;

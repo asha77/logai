@@ -36,6 +36,8 @@ use tokio::sync::{Mutex, Semaphore};
 pub struct AnalysisConfig {
     /// Maximum number of concurrent analysis requests (1-100)
     pub max_concurrency: usize,
+    /// Maximum number of groups to analyze (0 = analyze all)
+    pub max_groups: usize,
     /// Enable retry logic for failed requests
     pub enable_retry: bool,
     /// Maximum number of retry attempts
@@ -54,6 +56,7 @@ impl Default for AnalysisConfig {
     fn default() -> Self {
         Self {
             max_concurrency: 5,
+            max_groups: 0,
             enable_retry: true,
             max_retries: 3,
             initial_backoff_ms: 1000,
@@ -85,7 +88,6 @@ impl AnalysisConfig {
 pub struct ParallelAnalyzer {
     provider: Arc<dyn AIProvider>,
     semaphore: Arc<Semaphore>,
-    #[allow(dead_code)]
     config: AnalysisConfig,
 }
 
@@ -110,7 +112,11 @@ impl ParallelAnalyzer {
     where
         F: Fn(ProgressUpdate) + Send + Sync + 'static,
     {
-        let total = groups.len();
+        let total = if self.config.max_groups == 0 {
+            groups.len()
+        } else {
+            self.config.max_groups.min(groups.len())
+        };
         let start_time = std::time::Instant::now();
         let completed = Arc::new(Mutex::new(0usize));
         let callback = Arc::new(progress_callback);
@@ -118,7 +124,7 @@ impl ParallelAnalyzer {
         // Create tasks for each group with index to maintain ordering
         let mut tasks = Vec::new();
 
-        for (index, group) in groups.iter().enumerate() {
+        for (index, group) in groups.iter().enumerate().take(total) {
             let provider = Arc::clone(&self.provider);
             let semaphore = Arc::clone(&self.semaphore);
             let completed = Arc::clone(&completed);

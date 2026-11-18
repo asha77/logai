@@ -391,6 +391,7 @@ impl AIConfig {
     pub fn get_analysis_config(&self) -> crate::ai::parallel::AnalysisConfig {
         crate::ai::parallel::AnalysisConfig {
             max_concurrency: self.analysis.max_concurrency,
+            max_groups: 0,
             enable_retry: self.analysis.enable_retry,
             max_retries: self.analysis.max_retries,
             initial_backoff_ms: self.analysis.initial_backoff_ms,

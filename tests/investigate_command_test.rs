@@ -29,7 +29,7 @@ fn default_options() -> InvestigateOptions {
         api_key: None,
         ollama_host: None,
         region: None,
-        format: "json".to_string(),
+        format: Some("json".to_string()),
         limit: 10,
         no_mcp: true,
         mcp_config: None,
@@ -130,7 +130,7 @@ async fn test_investigate_json_output() {
 
     let mut opts = default_options();
     opts.files = vec![temp_file.path().to_str().unwrap().to_string()];
-    opts.format = "json".to_string();
+    opts.format = Some("json".to_string());
 
     let result = InvestigateCommand::execute(opts).await;
     assert!(result.is_ok());
@@ -143,7 +143,7 @@ async fn test_investigate_terminal_output() {
 
     let mut opts = default_options();
     opts.files = vec![temp_file.path().to_str().unwrap().to_string()];
-    opts.format = "terminal".to_string();
+    opts.format = Some("terminal".to_string());
 
     let result = InvestigateCommand::execute(opts).await;
     assert!(result.is_ok());
@@ -156,7 +156,7 @@ async fn test_investigate_html_output() {
 
     let mut opts = default_options();
     opts.files = vec![temp_file.path().to_str().unwrap().to_string()];
-    opts.format = "html".to_string();
+    opts.format = Some("html".to_string());
 
     let result = InvestigateCommand::execute(opts).await;
     assert!(result.is_ok());

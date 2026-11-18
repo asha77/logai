@@ -93,6 +93,7 @@ async fn test_parallel_processing_with_mock_provider() {
     let provider = Arc::new(MockProvider::new(10, 0.0));
     let config = AnalysisConfig {
         max_concurrency: 3,
+        max_groups: 0,
         enable_retry: false,
         max_retries: 0,
         initial_backoff_ms: 100,
@@ -154,6 +155,7 @@ async fn test_concurrency_limits_are_respected() {
     let provider = Arc::new(MockProvider::new(100, 0.0));
     let config = AnalysisConfig {
         max_concurrency: 2,
+        max_groups: 0,
         enable_retry: false,
         max_retries: 0,
         initial_backoff_ms: 100,
@@ -191,6 +193,7 @@ async fn test_mixed_success_failure_scenarios() {
     let provider = Arc::new(MockProvider::new(10, 0.5));
     let config = AnalysisConfig {
         max_concurrency: 5,
+        max_groups: 0,
         enable_retry: false,
         max_retries: 0,
         initial_backoff_ms: 100,
@@ -276,4 +279,46 @@ async fn test_single_group() {
 
     assert_eq!(groups.len(), 1);
     assert!(groups[0].analysis.is_some());
+}
+
+#[tokio::test]
+async fn test_max_groups_limit() {
+    let provider = Arc::new(MockProvider::new(10, 0.0));
+    let config = AnalysisConfig {
+        max_concurrency: 3,
+        max_groups: 3,
+        enable_retry: false,
+        max_retries: 0,
+        initial_backoff_ms: 100,
+        max_backoff_ms: 1000,
+        enable_cache: false,
+        truncate_length: 2000,
+    };
+
+    let analyzer = ParallelAnalyzer::new(provider.clone(), config);
+    let mut groups = create_test_groups(10);
+
+    let progress_updates = Arc::new(Mutex::new(Vec::new()));
+    let progress_updates_clone = progress_updates.clone();
+
+    let callback = move |update: ProgressUpdate| {
+        progress_updates_clone.lock().unwrap().push(update);
+    };
+
+    let result = analyzer.analyze_groups(&mut groups, callback).await;
+    assert!(result.is_ok());
+
+    // Only the first 3 groups should be sent to the provider
+    assert_eq!(provider.get_call_count(), 3);
+    assert_eq!(groups.iter().filter(|g| g.analysis.is_some()).count(), 3);
+    assert!(groups[3..].iter().all(|g| g.analysis.is_none()));
+
+    // Progress reports should reflect the limit, not the full list
+    let updates = progress_updates.lock().unwrap();
+    assert!(!updates.is_empty());
+    assert!(updates.iter().all(|u| u.total == 3));
+    assert_eq!(
+        updates.iter().last().map(|u| u.current),
+        Some(3)
+    );
 }

@@ -22,22 +22,27 @@ pub fn build_enhanced_analysis_prompt(group: &ErrorGroup, max_length: usize) -> 
     };
 
     format!(
-        r#"Analyze this error pattern and provide a JSON response.
+        r#"You are a Principal Network Engineer and Data Center Architect (L2/L3/EVPN-VXLAN) specializing in Edgecore Networks white-box switches running SONiC (Software for Open Networking in the Cloud) powered by Broadcom Trident ASICs (Trident II / II+ / III / IV). 
+Your task is analyze provided error pattern, perform a deep-dive root cause analysis, identify the underlying issue, and provide a clear explanation, troubleshooting and remediation plan in an JSON response.
 
-IMPORTANT: Return ONLY valid JSON. Do not include:
-- Markdown code blocks (```json or ```)
-- Explanations outside the JSON structure
-- Code examples outside the JSON structure
-- Any text before or after the JSON object
-
-Error Pattern:
+Input Data:
+- Edgecore Switch Models: AS7326-56X / AS5835-54X / AS7726-32X
+- SONiC Version: Community SONiC 202311
+- Error Pattern: {}
+- Occurrences: {}
+- Severity: {:?}
+- Example Messages: 
 {}
 
-Occurrences: {}
-Severity: {:?}
+Analysis Guidelines (SONiC + Broadcom Trident Context):
+When analyzing the logs, strictly account for the SONiC architecture and Broadcom SDK/SAI specifics:
+1. Container & Redis DB Interactions: Evaluate the health of critical daemons (`orchagent`, `syncd`, `portsyncd`, `xcvrd`, `teamd`, `bgpd`, `fpmsyncd`, `pmon`). Look for signs of desynchronization between `APPL_DB`, `ASIC_DB`, and `STATE_DB`, as well as SAI API errors/timeouts (`SAI_STATUS_FAILURE`, `SAI_STATUS_TABLE_FULL`, etc.).
+2. Hardware Layer (Broadcom Trident & ONLP): Pay close attention to ASIC initialization errors, LPM/EM/FDB/ACL table exhaustion in Trident, I2C/QSFP/SFP+ bus errors (transceiver EEPROM read failures in `xcvrd`), PSU/fan faults (`psud`, `thermalctld`), and Linux kernel/PCIe errors (`dmesg`).
+3. Control Plane vs. Data Plane: Clearly distinguish between control-plane issues (e.g., BGP/BFD flaps caused by high CPU load in `bgpd`) and data-plane issues (e.g., physical link drops at the PHY/SerDes level or `syncd` crashes).
 
-Example Messages:
-{}
+Constraints:
+- Base your analysis strictly on facts present in the logs. Do not hallucinate unseen errors.
+- If the log only shows a symptom (e.g., a BGP neighbor down) without the underlying trigger (e.g., physical link flap or `syncd` restart), explicitly state which additional logs (`/var/log/swss/sairedis.rec`, `/var/log/frr/frr.log`, etc.) are required for a definitive diagnosis.
 
 Required JSON format:
 {{
@@ -51,8 +56,13 @@ Required JSON format:
     }}
   ]
 }}
-
 Priority levels: 1 (critical) to 5 (minor)
+
+IMPORTANT: Return ONLY valid JSON. Do not include:
+- Markdown code blocks (```json or ```)
+- Explanations outside the JSON structure
+- Code examples outside the JSON structure
+- Any text before or after the JSON object
 
 Return ONLY the JSON object, nothing else."#,
         group.pattern, group.count, group.severity, examples_text

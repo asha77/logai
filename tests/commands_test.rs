@@ -19,7 +19,7 @@ async fn test_investigate_with_empty_file() {
         api_key: None,
         ollama_host: None,
         region: None,
-        format: "json".to_string(),
+        format: Some("json".to_string()),
         limit: 10,
         no_mcp: true,
         mcp_config: None,
@@ -46,7 +46,7 @@ async fn test_investigate_with_json_logs() {
         api_key: None,
         ollama_host: None,
         region: None,
-        format: "json".to_string(),
+        format: Some("json".to_string()),
         limit: 10,
         no_mcp: true,
         mcp_config: None,
@@ -73,7 +73,7 @@ async fn test_investigate_with_plain_logs() {
         api_key: None,
         ollama_host: None,
         region: None,
-        format: "terminal".to_string(),
+        format: Some("terminal".to_string()),
         limit: 5,
         no_mcp: true,
         mcp_config: None,
@@ -105,7 +105,7 @@ async fn test_investigate_with_multiple_files() {
         api_key: None,
         ollama_host: None,
         region: None,
-        format: "json".to_string(),
+        format: Some("json".to_string()),
         limit: 10,
         no_mcp: true,
         mcp_config: None,
@@ -128,7 +128,7 @@ async fn test_investigate_with_nonexistent_file() {
         api_key: None,
         ollama_host: None,
         region: None,
-        format: "json".to_string(),
+        format: Some("json".to_string()),
         limit: 10,
         no_mcp: true,
         mcp_config: None,
@@ -155,7 +155,7 @@ async fn test_investigate_with_directory() {
         api_key: None,
         ollama_host: None,
         region: None,
-        format: "json".to_string(),
+        format: Some("json".to_string()),
         limit: 10,
         no_mcp: true,
         mcp_config: None,
@@ -182,7 +182,7 @@ async fn test_investigate_with_no_multiline() {
         api_key: None,
         ollama_host: None,
         region: None,
-        format: "json".to_string(),
+        format: Some("json".to_string()),
         limit: 10,
         no_mcp: true,
         mcp_config: None,
@@ -209,7 +209,7 @@ async fn test_investigate_html_output() {
         api_key: None,
         ollama_host: None,
         region: None,
-        format: "html".to_string(),
+        format: Some("html".to_string()),
         limit: 10,
         no_mcp: true,
         mcp_config: None,
@@ -225,6 +225,25 @@ async fn test_investigate_html_output() {
 
 use logai::cli::ConfigAction;
 use logai::commands::config::ConfigCommand;
+use std::sync::{Mutex, OnceLock};
+
+// Serializes tests that mutate the real config file path, because
+// `env::set_var` is process-global and parallel writes would race.
+static CONFIG_TEST_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+
+/// Run `f` with HOME pointed at a fresh temp dir so `config set` never
+/// touches the user's real `~/.logai/config.toml`.
+fn with_isolated_home(f: impl FnOnce()) {
+    let _guard = CONFIG_TEST_LOCK.get_or_init(|| Mutex::new(())).lock().unwrap();
+    let temp = TempDir::new().unwrap();
+    let original = std::env::var("HOME").ok();
+    std::env::set_var("HOME", temp.path());
+    f();
+    match original {
+        Some(home) => std::env::set_var("HOME", home),
+        None => std::env::remove_var("HOME"),
+    }
+}
 
 #[test]
 fn test_config_show() {
@@ -235,29 +254,35 @@ fn test_config_show() {
 
 #[test]
 fn test_config_set_valid_key() {
-    let result = ConfigCommand::execute(ConfigAction::Set {
-        key: "ai.provider".to_string(),
-        value: "openai".to_string(),
+    with_isolated_home(|| {
+        let result = ConfigCommand::execute(ConfigAction::Set {
+            key: "ai.provider".to_string(),
+            value: "openai".to_string(),
+        });
+        assert!(result.is_ok());
     });
-    assert!(result.is_ok());
 }
 
 #[test]
 fn test_config_set_analysis_concurrency() {
-    let result = ConfigCommand::execute(ConfigAction::Set {
-        key: "analysis.max_concurrency".to_string(),
-        value: "5".to_string(),
+    with_isolated_home(|| {
+        let result = ConfigCommand::execute(ConfigAction::Set {
+            key: "analysis.max_concurrency".to_string(),
+            value: "5".to_string(),
+        });
+        assert!(result.is_ok());
     });
-    assert!(result.is_ok());
 }
 
 #[test]
 fn test_config_set_output_format() {
-    let result = ConfigCommand::execute(ConfigAction::Set {
-        key: "output.format".to_string(),
-        value: "json".to_string(),
+    with_isolated_home(|| {
+        let result = ConfigCommand::execute(ConfigAction::Set {
+            key: "output.format".to_string(),
+            value: "json".to_string(),
+        });
+        assert!(result.is_ok());
     });
-    assert!(result.is_ok());
 }
 
 #[test]

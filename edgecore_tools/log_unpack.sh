@@ -11,7 +11,6 @@ MAIN_ARCHIVE="$1"
 
 echo "Получен параметр: $MAIN_ARCHIVE"
 
-
 # Проверяем существование файла
 if [ ! -f "$MAIN_ARCHIVE" ]; then
     echo "Ошибка: Файл '$MAIN_ARCHIVE' не найден."
@@ -26,8 +25,8 @@ echo "Директория: $SCRIPT_DIR"
 
 
 # Теперь используем абсолютный путь к архиву
-MAIN_ARCHIVE="$SCRIPT_DIR/$MAIN_ARCHIVE"
-
+# MAIN_ARCHIVE="$SCRIPT_DIR/$MAIN_ARCHIVE"
+MAIN_ARCHIVE="$MAIN_ARCHIVE"
 echo "Абсолютный полный путь: $MAIN_ARCHIVE"
 
 # Проверяем, существует ли архив (для надежности)

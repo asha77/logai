@@ -13,7 +13,7 @@ mod common;
 
 use chrono::Utc;
 use logai::ai::provider::AIProvider;
-use logai::ai::providers::{ClaudeProvider, GeminiProvider, OllamaProvider, OpenAIProvider};
+use logai::ai::providers::{ClaudeProvider, GeminiProvider, OllamaProvider, OpenAIProvider, JetGPTProvider};
 use logai::types::{ErrorGroup, LogEntry, LogMetadata, Severity};
 use std::collections::HashMap;
 

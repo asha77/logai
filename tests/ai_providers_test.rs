@@ -12,7 +12,7 @@
 mod common;
 
 use common::fixtures;
-use logai::ai::providers::{ClaudeProvider, GeminiProvider, OllamaProvider, OpenAIProvider};
+use logai::ai::providers::{ClaudeProvider, GeminiProvider, OllamaProvider, OpenAIProvider, JetGPTProvider};
 use logai::ai::AIProvider;
 use mockito::{Matcher, Server};
 use serde_json::json;

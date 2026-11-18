@@ -60,14 +60,14 @@ pub enum Commands {
         no_cache: bool,
 
         /// Output format (terminal, json, html)
-        #[arg(long, short = 'f', default_value = "html")]
-        format: String,
+        #[arg(long, short = 'f')]
+        format: Option<String>,
 
         /// Save output to file
         #[arg(long, short = 'o')]
         output: Option<String>,
 
-        /// Maximum number of error groups to show (0 = unlimited)
+        /// Maximum number of error groups to analyze (0 = unlimited)
         #[arg(long, default_value = "0")]
         limit: usize,
 

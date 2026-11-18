@@ -26,7 +26,7 @@ pub struct InvestigateOptions {
     pub api_key: Option<String>,
     pub ollama_host: Option<String>,
     pub region: Option<String>,
-    pub format: String,
+    pub format: Option<String>,
     pub limit: usize,
     pub no_mcp: bool,
     pub mcp_config: Option<String>,
@@ -128,6 +128,7 @@ impl InvestigateCommand {
                 ollama_host,
                 region,
                 concurrency,
+                limit,
                 stats,
             )
             .await?;
@@ -135,13 +136,9 @@ impl InvestigateCommand {
 
         // Priority: CLI flag > config > fallback to html
         let config = crate::ai::AIConfig::load().unwrap_or_default();
-        let output_format = if format != "html" {
-            // CLI flag was explicitly set to something other than default
-            format
-        } else {
-            // Use config or fallback to html
-            config.output.format.unwrap_or_else(|| "html".to_string())
-        };
+        let output_format = format
+            .or_else(|| config.output.format.clone())
+            .unwrap_or_else(|| "html".to_string());
 
         // Format and display output
         Self::display_output(&groups, &output_format, limit)?;
@@ -177,6 +174,7 @@ impl InvestigateCommand {
         ollama_host: Option<String>,
         region: Option<String>,
         concurrency: Option<usize>,
+        limit: usize,
         stats: bool,
     ) -> Result<()> {
         let provider_name = ai_provider.to_string();
@@ -206,7 +204,14 @@ impl InvestigateCommand {
         }
         // else: config.max_concurrency already has the value from config file or default
 
+        config.max_groups = limit;
+
         let actual_concurrency = config.max_concurrency;
+        let analyzed_groups = if config.max_groups == 0 {
+            groups.len()
+        } else {
+            config.max_groups.min(groups.len())
+        };
         let parallel_analyzer = ai::ParallelAnalyzer::new(provider, config);
 
         // Create progress callback
@@ -224,20 +229,20 @@ impl InvestigateCommand {
         // Clear progress line and show completion
         eprint!("\r\x1b[K");
         let analysis_duration = analysis_start.elapsed();
-        let throughput = groups.len() as f64 / analysis_duration.as_secs_f64();
+        let throughput = analyzed_groups as f64 / analysis_duration.as_secs_f64();
 
         if stats {
-            eprintln!("✅ Analyzed {} error groups\n", groups.len());
+            eprintln!("✅ Analyzed {} error groups\n", analyzed_groups);
             eprintln!("📊 Analysis Statistics:");
             eprintln!("  AI Provider: {}", provider_name);
             eprintln!("  Model: {}", model_display);
-            eprintln!("  Error groups: {}", groups.len());
+            eprintln!("  Error groups: {}/{}", analyzed_groups, groups.len());
             eprintln!("  Duration: {:.2}s", analysis_duration.as_secs_f64());
             eprintln!("  Throughput: {:.2} groups/sec", throughput);
             eprintln!("  Concurrency: {}", actual_concurrency);
             eprintln!();
         } else {
-            eprintln!("✅ Analyzed {} error groups\n", groups.len());
+            eprintln!("✅ Analyzed {} error groups\n", analyzed_groups);
         }
 
         Ok(())

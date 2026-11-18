@@ -63,7 +63,7 @@ pub use parallel::{AnalysisConfig, ParallelAnalyzer};
 pub use progress::ProgressUpdate;
 pub use provider::{AIProvider, NoAI};
 pub use providers::{
-    BedrockProvider, ClaudeProvider, GeminiProvider, OllamaProvider, OpenAIProvider,
+    BedrockProvider, ClaudeProvider, GeminiProvider, OllamaProvider, OpenAIProvider, JetGPTProvider, 
 };
 pub use retry::RetryableAnalyzer;
 pub use statistics::AnalysisStatistics;
@@ -130,9 +130,17 @@ pub fn create_provider(
 
             Ok(Arc::new(provider))
         }
+        "jetgpt" => {
+            let api_key = api_key
+                .or_else(|| provider_config.and_then(|c| c.api_key.clone()))
+                .or_else(|| std::env::var("JETGPT_API_KEY").ok())
+                .ok_or_else(|| anyhow::anyhow!("JETGPT API key not provided. Set JETGPT_API_KEY environment variable, use --api-key, or configure in ~/.logai/config.toml"))?;
+            let model = model.or_else(|| provider_config.and_then(|c| c.model.clone()));
+            Ok(Arc::new(JetGPTProvider::new(api_key, model)))
+        }
         "none" => Ok(Arc::new(NoAI)),
         _ => Err(anyhow::anyhow!(
-            "Unknown AI provider: {}. Supported: openai, claude, gemini, ollama, bedrock, none",
+            "Unknown AI provider: {}. Supported: openai, claude, gemini, ollama, bedrock, jetgpt, none",
             provider_name
         )),
     }
